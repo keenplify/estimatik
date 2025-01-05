@@ -1,6 +1,9 @@
 import { styled } from '@mui/material/styles'
 import Button from '@mui/material/Button'
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
+import Papa from 'papaparse'
+import { useDataStore } from '@renderer/stores/data'
+import { usePhaseStore } from '@renderer/stores/phase'
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -15,6 +18,23 @@ const VisuallyHiddenInput = styled('input')({
 })
 
 export function DataImport() {
+  const { setup } = useDataStore()
+  const { setPhase } = usePhaseStore()
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      Papa.parse<Record<string, string>>(file, {
+        complete: (result) => {
+          setup(result.data, result.meta.fields)
+          setPhase(1)
+        },
+        header: true,
+        skipEmptyLines: true
+      })
+    }
+  }
+
   return (
     <div>
       <p>Please upload a .CSV file containing your dataset. Ensure that:</p>
@@ -27,7 +47,7 @@ export function DataImport() {
       <div className="mt-4">
         <Button component="label" variant="contained" tabIndex={-1} startIcon={<CloudUploadIcon />}>
           Upload CSV
-          <VisuallyHiddenInput type="file" onChange={(event) => console.log(event.target.files)} />
+          <VisuallyHiddenInput type="file" onChange={handleFileChange} />
         </Button>
       </div>
     </div>

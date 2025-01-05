@@ -5,42 +5,53 @@ import Info from '@renderer/components/Info'
 import { DataImport } from '@renderer/components/phases/DataImport'
 import { DataPreview } from '@renderer/components/phases/DataPreview'
 import { usePhaseStore } from '@renderer/stores/phase'
+import DataTreatment from './components/phases/DataTreatment'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import DataTraining from './components/phases/DataTraining'
+import { useDataStore } from './stores/data'
 
-const theme = createTheme({
-  palette: {
-    mode: 'dark'
-  }
-})
+const theme = createTheme({})
+
+const queryClient = new QueryClient()
 
 function App(): JSX.Element {
   const { phase, setPhase } = usePhaseStore()
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
+  const { isSetup, bestCandidateFields } = useDataStore()
 
   const handleChange = (_, newValue: number) => {
     setPhase(newValue)
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <div className="p-4 flex flex-col gap-4 min-h-screen">
-        <Info />
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={phase} onChange={handleChange} aria-label="basic tabs example">
-            <Tab label="Data Import" />
-            <Tab label="Data Preview" />
-            <Tab label="Output" />
-          </Tabs>
-        </Box>
-        <CustomTabPanel index={0}>
-          <DataImport />
-        </CustomTabPanel>
-        <CustomTabPanel index={1}>
-          <DataPreview />
-        </CustomTabPanel>
-        <Footer />
-      </div>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <div className="p-4 flex flex-col gap-4 min-h-screen">
+          <Info />
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs value={phase} onChange={handleChange} aria-label="basic tabs example">
+              <Tab label="Data Import" />
+              <Tab label="Data Preview" disabled={!isSetup} />
+              <Tab label="Data Treatment" disabled={!isSetup} />
+              <Tab label="Data Training" disabled={!isSetup || bestCandidateFields.length == 0} />
+            </Tabs>
+          </Box>
+          <CustomTabPanel index={0}>
+            <DataImport />
+          </CustomTabPanel>
+          <CustomTabPanel index={1}>
+            <DataPreview />
+          </CustomTabPanel>
+          <CustomTabPanel index={2}>
+            <DataTreatment />
+          </CustomTabPanel>
+          <CustomTabPanel index={3}>
+            <DataTraining />
+          </CustomTabPanel>
+          <Footer />
+        </div>
+      </ThemeProvider>
+    </QueryClientProvider>
   )
 }
 
