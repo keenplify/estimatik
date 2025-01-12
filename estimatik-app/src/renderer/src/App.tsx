@@ -9,6 +9,7 @@ import DataTreatment from './components/phases/DataTreatment'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import DataTraining from './components/phases/DataTraining'
 import { useDataStore } from './stores/data'
+import DataSummary from './components/phases/DataSummary'
 
 const theme = createTheme({})
 
@@ -16,7 +17,7 @@ const queryClient = new QueryClient()
 
 function App(): JSX.Element {
   const { phase, setPhase } = usePhaseStore()
-  const { isSetup, bestCandidateFields } = useDataStore()
+  const { isSetup, bestCandidateFields, result } = useDataStore()
 
   const handleChange = (_, newValue: number) => {
     setPhase(newValue)
@@ -34,6 +35,7 @@ function App(): JSX.Element {
               <Tab label="Data Preview" disabled={!isSetup} />
               <Tab label="Data Treatment" disabled={!isSetup} />
               <Tab label="Data Training" disabled={!isSetup || bestCandidateFields.length == 0} />
+              <Tab label="Data Summary" disabled={!isSetup || bestCandidateFields.length == 0 || !result} />
             </Tabs>
           </Box>
           <CustomTabPanel index={0}>
@@ -47,6 +49,9 @@ function App(): JSX.Element {
           </CustomTabPanel>
           <CustomTabPanel index={3}>
             <DataTraining />
+          </CustomTabPanel>
+          <CustomTabPanel index={4}>
+            <DataSummary />
           </CustomTabPanel>
           <Footer />
         </div>

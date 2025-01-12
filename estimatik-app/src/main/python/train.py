@@ -1,127 +1,113 @@
-import pandas as pd
-import numpy as np
-import json
 import argparse
+import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.layers import Dense, Input
+import numpy as np
+import json
+import os
 
-def train_model(file_path, save_path):
-    # Load the dataset
-    df = pd.read_csv(file_path)
-    
-    # Prepare the input (X) and output (y) data
-    X = df.drop(df.columns[0], axis=1)
-    y = df[df.columns[0]]
-    
-    # Separate rows with missing output (y) values for prediction data
-    prediction_data = df[y.isna()]
-    prediction_X = prediction_data.drop(prediction_data.columns[0], axis=1)
-    
-    # Filter out rows with missing output (y) values for training, validation, and testing
-    df = df.dropna(subset=[df.columns[0]])
-    X = df.drop(df.columns[0], axis=1)
-    y = df[df.columns[0]]
-    
-    # Split the dataset into 70% training, 15% validation, and 15% test sets
-    X_train_val, X_test, y_train_val, y_test = train_test_split(X, y, test_size=0.15, random_state=42)
-    X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=0.1765, random_state=42)  # 0.1765 * 85% ≈ 15%
-    
-    # Normalize the data
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_val = scaler.transform(X_val)
-    X_test = scaler.transform(X_test)
-    prediction_X = scaler.transform(prediction_X)
-    
-    # Initialize a new model
-    predictor = Sequential()
-    
-    # Adding the input layer and first hidden layer
-    predictor.add(Dense(activation="relu", input_dim=X_train.shape[1], units=128, kernel_initializer="uniform"))
-    
-    # Adding the second hidden layer
-    predictor.add(Dense(activation="relu", units=64, kernel_initializer="uniform"))
-    
-    # Adding the third hidden layer
-    predictor.add(Dense(activation="relu", units=32, kernel_initializer="uniform"))
-    
-    # Adding the fourth hidden layer
-    predictor.add(Dense(activation="relu", units=16, kernel_initializer="uniform"))
-    
-    # Adding the fifth hidden layer
-    predictor.add(Dense(activation="relu", units=8, kernel_initializer="uniform"))
-    
-    # Adding the output layer
-    predictor.add(Dense(units=1, kernel_initializer="uniform"))
-    
-    # Compiling the model
-    predictor.compile(optimizer="RMSprop", loss="mean_absolute_percentage_error")
-    
-    # Early stopping callback
-    early_stopping = EarlyStopping(monitor='val_loss', patience=50, restore_best_weights=True)
-    
-    # Fitting the model to the training set with early stopping
-    history = predictor.fit(X_train, y_train, batch_size=10, epochs=1000, validation_data=(X_val, y_val), callbacks=[early_stopping], verbose=0)
-    
-    # Save the model
-    predictor.save(save_path)
-    
-    # Prediction on the test set
-    y_pred_test = predictor.predict(X_test)
-    
-    # Calculate regression metrics for test set
-    test_mae = mean_absolute_error(y_test, y_pred_test)
-    test_mse = mean_squared_error(y_test, y_pred_test)
-    
-    # Calculate regression metrics for training set
-    y_pred_train = predictor.predict(X_train)
-    train_mae = mean_absolute_error(y_train, y_pred_train)
-    train_mse = mean_squared_error(y_train, y_pred_train)
-    
-    # Calculate regression metrics for validation set
-    y_pred_val = predictor.predict(X_val)
-    val_mae = mean_absolute_error(y_val, y_pred_val)
-    val_mse = mean_squared_error(y_val, y_pred_val)
-    
-    # Predict the missing values
-    y_pred_prediction = predictor.predict(prediction_X)
-    
-    # Prepare the result
+# Suppress TensorFlow warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logging (1: INFO, 2: WARNING, 3: ERROR)
+
+def build_model(input_dim, layers):
+    units = input_dim * 2
+    model = Sequential()
+    model.add(Input(shape=(input_dim,)))
+    for _ in range(layers):
+        model.add(Dense(units, activation='relu', kernel_initializer="uniform"))
+    model.add(Dense(1, kernel_initializer="uniform"))
+    model.compile(optimizer='RMSProp', loss='mean_absolute_percentage_error', metrics=['mae'])
+    return model
+
+def train_model(data_path, model_path, layers, prediction_path):
+    df = pd.read_csv(data_path)
+    df_predict = pd.read_csv(prediction_path)
+
+    labels = df.iloc[:, 0].values
+    y = df.iloc[:, 1].values
+    X = df.iloc[:, 2:].values
+
+    prediction_labels = df_predict.iloc[:, 0].values
+    X_predict = df_predict.iloc[:, 2:].values  # Exclude the label and output columns
+
+    # Check for NaN values in the data
+    if np.isnan(X).any() or np.isnan(y).any():
+        raise ValueError("Input data contains NaN values.")
+
+    # Check if the number of columns in the prediction data matches the training data
+    if X.shape[1] != X_predict.shape[1]:
+        raise ValueError("Prediction data must have the same number of columns as training data.")
+
+    X_train, X_temp, y_train, y_temp, labels_train, labels_temp = train_test_split(X, y, labels, test_size=0.3, random_state=42)
+    X_val, X_test, y_val, y_test, labels_val, labels_test = train_test_split(X_temp, y_temp, labels_temp, test_size=0.5, random_state=42)
+
+    model = build_model(X.shape[1], layers)
+    history = model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=100, batch_size=32, verbose=0)
+
+    y_train_pred = model.predict(X_train, verbose=0).flatten()
+    y_val_pred = model.predict(X_val, verbose=0).flatten()
+    y_test_pred = model.predict(X_test, verbose=0).flatten()
+    y_predict = model.predict(X_predict, verbose=0).flatten()
+
+    # Check for NaN values in predictions
+    if np.isnan(y_train_pred).any() or np.isnan(y_val_pred).any() or np.isnan(y_test_pred).any():
+        raise ValueError("Model predictions contain NaN values.")
+
+    train_predictions = {label: float(pred) for label, pred in zip(labels_train, y_train_pred)}
+    val_predictions = {label: float(pred) for label, pred in zip(labels_val, y_val_pred)}
+    test_predictions = {label: float(pred) for label, pred in zip(labels_test, y_test_pred)}
+    predict_predictions = {label: float(pred) for label, pred in zip(prediction_labels, y_predict)}
+
+    train_mae = mean_absolute_error(y_train, y_train_pred)
+    train_mse = mean_squared_error(y_train, y_train_pred)
+    val_mae = mean_absolute_error(y_val, y_val_pred)
+    val_mse = mean_squared_error(y_val, y_val_pred)
+    test_mae = mean_absolute_error(y_test, y_test_pred)
+    test_mse = mean_squared_error(y_test, y_test_pred)
+
     result = {
         "training": {
             "size": len(X_train),
             "mae": train_mae,
-            "mse": train_mse
+            "mse": train_mse,
+            "predictions": train_predictions
         },
         "validation": {
             "size": len(X_val),
             "mae": val_mae,
-            "mse": val_mse
+            "mse": val_mse,
+            "predictions": val_predictions
         },
         "testing": {
             "size": len(X_test),
             "mae": test_mae,
-            "mse": test_mse
+            "mse": test_mse,
+            "predictions": test_predictions
         },
         "prediction": {
-            "size": len(prediction_X),
-            "predictions": y_pred_prediction.flatten().tolist()
+            "size": len(X_predict),
+            "predictions": predict_predictions
         },
-        "model_path": save_path,
+        "model_path": model_path,
         "last_epoch": len(history.history['loss'])
     }
-    
-    # Print the result as JSON
-    print(json.dumps(result, indent=4))
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Train a model on a CSV file.')
+    model.save(model_path)
+
+    return result
+
+def main():
+    parser = argparse.ArgumentParser(description='Train a model with the provided CSV data.')
     parser.add_argument('-file', type=str, required=True, help='Path to the CSV file')
     parser.add_argument('-path', type=str, required=True, help='Path to save the trained model')
+    parser.add_argument('-layers', type=int, required=True, help='Number of layers in the model')
+    parser.add_argument('-predictionfile', type=str, required=True, help='Path to the CSV file for prediction')
     args = parser.parse_args()
-    
-    train_model(args.file, args.path)
+
+    result = train_model(args.file, args.path, args.layers, args.predictionfile)
+    print(json.dumps(result))
+
+if __name__ == "__main__":
+    main()

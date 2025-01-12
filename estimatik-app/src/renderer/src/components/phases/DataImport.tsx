@@ -39,10 +39,28 @@ export function DataImport() {
     <div>
       <p>Please upload a .CSV file containing your dataset. Ensure that:</p>
       <ol>
-        <li>The first column contains the output data.</li>
-        <li>The second and subsequent columns contain the input data.</li>
-        <li>The first row contains the labels for both output and input data.</li>
-        <li>Last rows......</li>
+        <li>The first column should contain the Period of the data (e.g., "2021Q3").</li>
+        <li>The second column should contain the Construction Material Prices.</li>
+        <li>
+          The third column onward should contain Macroeconomic Indicators (e.g., Inflation Rate,
+          GDP, Employment Rate, etc.).
+        </li>
+        <li>
+          The first row must contain the labels for each column (e.g., "Period," "Material Prices,"
+          "GDP," etc.).
+        </li>
+        <li>
+          The second row must contain the units of measurement for each column (e.g., "Month-Year,"
+          "USD/ton," "%," etc.).
+        </li>
+        <li>
+          From the third row onward, provide the data points for each column in the respective units
+          of measurement.
+        </li>
+        <li>
+          Do not include commas (,) within the data values or labels. Use alternative formatting
+          such as a space or period if necessary.
+        </li>
       </ol>
       <div className="mt-4">
         <Button component="label" variant="contained" tabIndex={-1} startIcon={<CloudUploadIcon />}>

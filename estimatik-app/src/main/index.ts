@@ -2,7 +2,8 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { callPythonAnalysis } from './utils/bridge'
+import { callPythonAnalysis, callPythonTraining } from './utils/bridge'
+import { dialog } from 'electron'
 
 function createWindow(): void {
   // Create the browser window.
@@ -57,6 +58,27 @@ app.whenReady().then(() => {
     } catch (error) {
       console.error('Error in analysis:', error)
       event.reply('analysis-error', error)
+    }
+  })
+
+  ipcMain.on('training', async (event, data: Record<string, string>[], predictionData: Record<string, string>[], args) => {
+    try {
+      const result = await callPythonTraining(data, predictionData, args)
+      event.reply('training-reply', result)
+    } catch (error) {
+      console.error('Error in analysis:', error)
+      event.reply('training-error', error)
+    }
+  })
+
+  ipcMain.on('save-dialog', async (event, params) => {
+    try {
+      const data = await dialog.showSaveDialog(params)
+
+      event.reply('save-dialog-reply', data)
+    } catch (error) {
+      console.error('Error in analysis:', error)
+      event.reply('save-dialog-error', error)
     }
   })
 

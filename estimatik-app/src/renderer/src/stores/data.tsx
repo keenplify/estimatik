@@ -1,3 +1,4 @@
+import { TrainingResult } from '@renderer/types'
 import { create } from 'zustand'
 
 interface DataState {
@@ -14,6 +15,8 @@ interface DataState {
   bestCandidateFields: string[]
   setBestCandidateFields: (fields: string[]) => void
   setup: (to: Record<string, string>[], fields?: string[]) => void
+  result: TrainingResult | null
+  setResult: (data: TrainingResult) => void
 }
 
 export const useDataStore = create<DataState>()((set) => ({
@@ -61,5 +64,7 @@ export const useDataStore = create<DataState>()((set) => ({
   highCorrelationFields: [],
   setHighCorrelationFields: (fields) => set({ highCorrelationFields: fields }),
   bestCandidateFields: [],
-  setBestCandidateFields: (fields) => set({ bestCandidateFields: fields })
+  setBestCandidateFields: (fields) => set({ bestCandidateFields: fields }),
+  result: null,
+  setResult: (data) => set({ result: data }),
 }))

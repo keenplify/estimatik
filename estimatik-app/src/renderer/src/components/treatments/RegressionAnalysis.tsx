@@ -6,13 +6,8 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
 
 export default function RegressionAnalysis() {
-  const {
-    highCorrelationFields,
-    unlabeledFields,
-    trainingData,
-    setBestCandidateFields,
-    bestCandidateFields
-  } = useDataStore()
+  const { highCorrelationFields, unlabeledFields, trainingData, setBestCandidateFields } =
+    useDataStore()
 
   const { data, isLoading } = useQuery({
     queryKey: ['analysis', highCorrelationFields, unlabeledFields, trainingData],

@@ -17,11 +17,12 @@ import { useDataStore } from '@renderer/stores/data'
 const steps = [
   {
     label: 'Correlation Matrix',
-    description: `Lorem ipsum dolor amet`
+    description: `A correlation matrix is a table displaying the pairwise correlation coefficients (R) between variables, where
+R≥±0.8 indicates a strong correlation, serving as a key indicator for variable selection in stepwise regression.`
   },
   {
-    label: 'Regression Analysis',
-    description: 'Lorem ipsum dolor amet'
+    label: 'Stepwise Regression',
+    description: `Stepwise regression is a variable selection method that iteratively adds or removes predictors based on statistical criteria, aiming to identify the combination with the highest adjusted R-squared and lowest Akaike's Information Criterion (AIC) for use in ANN modeling. `
   }
 ]
 

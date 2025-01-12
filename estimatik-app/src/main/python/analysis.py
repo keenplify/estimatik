@@ -4,6 +4,9 @@ import argparse
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import numpy as np
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 def analyze_csv(csv_file_path):
     # Read the CSV file into a pandas DataFrame
