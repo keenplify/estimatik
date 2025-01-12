@@ -1,4 +1,12 @@
-import { Paper, Table, TableBody, TableCell, TableContainer, TableRow } from '@mui/material'
+import {
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
+} from '@mui/material'
 import { useDataStore } from '@renderer/stores/data'
 import { AnalysisResponse } from '@renderer/types'
 import { sendIpcMessage } from '@renderer/utils/promises'
@@ -65,6 +73,14 @@ export default function RegressionAnalysis() {
       ) : (
         <TableContainer component={Paper}>
           <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Variable</TableCell>
+                <TableCell>R Squared</TableCell>
+                <TableCell>Adjusted R Squared</TableCell>
+                <TableCell>Akaike's Information Criterion (AIC)</TableCell>
+              </TableRow>
+            </TableHead>
             <TableBody>
               {data?.map((d, i) => (
                 <TableRow key={i}>
@@ -83,7 +99,9 @@ export default function RegressionAnalysis() {
       {bestCandidate && (
         <Paper elevation={2} className="p-2">
           The best is{' '}
-          {bestCandidate ? `${unlabeledFields[0]} + ${bestCandidate.fields.join(' + ')}` : 'N/A'}
+          <b>
+            {bestCandidate ? `${unlabeledFields[0]} + ${bestCandidate.fields.join(' + ')}` : 'N/A'}
+          </b>
         </Paper>
       )}
     </div>
