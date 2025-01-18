@@ -17,6 +17,8 @@ export default function RegressionAnalysis() {
   const { highCorrelationFields, unlabeledFields, trainingData, setBestCandidateFields } =
     useDataStore()
 
+  console.log({ highCorrelationFields, unlabeledFields, trainingData, setBestCandidateFields })
+
   const { data, isLoading } = useQuery({
     queryKey: ['analysis', highCorrelationFields, unlabeledFields, trainingData],
     queryFn: async () => {
@@ -24,9 +26,12 @@ export default function RegressionAnalysis() {
         highCorrelationFields.slice(0, index + 1)
       )
 
+      console.log({ transformedFields })
+
       const res: (AnalysisResponse & { fields: string[] })[] = []
 
       for (const fields of transformedFields) {
+        console.log({ fields })
         const data = trainingData.map((datum) => {
           const d: Record<string, string> = {
             [unlabeledFields[0]]: datum[unlabeledFields[0]]
@@ -38,6 +43,8 @@ export default function RegressionAnalysis() {
 
           return d
         })
+
+        console.log({ data })
 
         const analysis = await sendIpcMessage<AnalysisResponse>('analysis', data)
 

@@ -3,10 +3,12 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.layers import Dense, Input, BatchNormalization
 import numpy as np
 import json
 import os
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.optimizers import RMSprop
 
 # Suppress TensorFlow warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logging (1: INFO, 2: WARNING, 3: ERROR)
@@ -16,9 +18,10 @@ def build_model(input_dim, layers):
     model = Sequential()
     model.add(Input(shape=(input_dim,)))
     for _ in range(layers):
-        model.add(Dense(units, activation='relu', kernel_initializer="uniform"))
-    model.add(Dense(1, kernel_initializer="uniform"))
-    model.compile(optimizer='RMSProp', loss='mean_absolute_percentage_error', metrics=['mae'])
+        model.add(Dense(units, activation='relu', kernel_initializer="he_uniform"))
+    model.add(BatchNormalization())
+    model.add(Dense(1, kernel_initializer="he_uniform"))
+    model.compile(optimizer=RMSprop(learning_rate=0.001), loss='mean_absolute_percentage_error', metrics=['mae'])
     return model
 
 def train_model(data_path, model_path, layers, prediction_path):
@@ -31,6 +34,15 @@ def train_model(data_path, model_path, layers, prediction_path):
 
     prediction_labels = df_predict.iloc[:, 0].values
     X_predict = df_predict.iloc[:, 2:].values  # Exclude the label and output columns
+
+    # Normalize the data
+    scaler_X = StandardScaler()
+    X = scaler_X.fit_transform(X)
+    X_predict = scaler_X.transform(X_predict)
+
+    # Normalize the target variable
+    scaler_y = StandardScaler()
+    y = scaler_y.fit_transform(y.reshape(-1, 1)).flatten()
 
     # Check for NaN values in the data
     if np.isnan(X).any() or np.isnan(y).any():
@@ -50,6 +62,15 @@ def train_model(data_path, model_path, layers, prediction_path):
     y_val_pred = model.predict(X_val, verbose=0).flatten()
     y_test_pred = model.predict(X_test, verbose=0).flatten()
     y_predict = model.predict(X_predict, verbose=0).flatten()
+
+    # Inverse transform the predictions and actual values
+    y_train_pred = scaler_y.inverse_transform(y_train_pred.reshape(-1, 1)).flatten()
+    y_val_pred = scaler_y.inverse_transform(y_val_pred.reshape(-1, 1)).flatten()
+    y_test_pred = scaler_y.inverse_transform(y_test_pred.reshape(-1, 1)).flatten()
+    y_predict = scaler_y.inverse_transform(y_predict.reshape(-1, 1)).flatten()
+    y_train = scaler_y.inverse_transform(y_train.reshape(-1, 1)).flatten()
+    y_val = scaler_y.inverse_transform(y_val.reshape(-1, 1)).flatten()
+    y_test = scaler_y.inverse_transform(y_test.reshape(-1, 1)).flatten()
 
     # Check for NaN values in predictions
     if np.isnan(y_train_pred).any() or np.isnan(y_val_pred).any() or np.isnan(y_test_pred).any():
@@ -94,7 +115,8 @@ def train_model(data_path, model_path, layers, prediction_path):
         "last_epoch": len(history.history['loss'])
     }
 
-    model.save(model_path)
+    with open(model_path, 'w') as f:
+        json.dump(result, f)
 
     return result
 

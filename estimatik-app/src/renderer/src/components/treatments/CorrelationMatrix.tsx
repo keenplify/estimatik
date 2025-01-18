@@ -31,14 +31,16 @@ export default function CorrelationMatrix() {
 
     matrix.forEach((row, i) => {
       Object.entries(row).forEach(([key, value]) => {
-        if (value !== null && Math.abs(value) >= 0.8 && Math.abs(value) < 1) {
+        if (value !== null && (Math.abs(value) >= 0.8 || value === 1)) {
           highCorrelationFields.push(fields[i])
           highCorrelationFields.push(key)
         }
       })
     })
 
-    setHighCorrelationFields(_.uniq(highCorrelationFields))
+    setHighCorrelationFields(
+      _.uniq(highCorrelationFields).filter((field) => field != fields[0] && field != fields[1])
+    )
   }, [matrix, fields, setHighCorrelationFields])
 
   return (

@@ -65,7 +65,7 @@ export function DataImport() {
       <div className="mt-4">
         <Button component="label" variant="contained" tabIndex={-1} startIcon={<CloudUploadIcon />}>
           Upload CSV
-          <VisuallyHiddenInput type="file" onChange={handleFileChange} />
+          <VisuallyHiddenInput type="file" onChange={handleFileChange} accept=".csv" />
         </Button>
       </div>
     </div>

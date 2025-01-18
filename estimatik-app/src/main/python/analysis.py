@@ -31,12 +31,14 @@ def analyze_csv(csv_file_path):
 
     # Calculate the AIC
     n = len(y)
+    independent = X.shape[1]
+    # aic = n * np.log(rss / n) + 2 * k
     k = X.shape[1] + 1  # Number of parameters including the intercept
+    r_squared = model.score(X, y)
     aic = n * np.log(rss / n) + 2 * k
 
     # Calculate R-squared and adjusted R-squared
-    r_squared = model.score(X, y)
-    adjusted_r_squared = 1 - (1 - r_squared) * (n - 1) / (n - k - 1)
+    adjusted_r_squared = 1 - (1 - r_squared) * (n - 1) / (n - independent - 1)
 
     # Create the result dictionary
     result = {
@@ -54,6 +56,7 @@ def main():
     args = parser.parse_args()
 
     result_json = analyze_csv(args.file)
+    # result_json = analyze_csv('./data/rebar2.csv')
     print(result_json)
 
 if __name__ == '__main__':
