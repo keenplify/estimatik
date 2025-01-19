@@ -159,8 +159,6 @@ export function openNetron(path: string, event: Electron.IpcMainEvent) {
 
     // Listen to the stdout stream and log output as it arrives
     netron.process.stdout?.on('data', (data) => {
-      console.log(data.toString()) // Optionally log the output
-
       // Check if the data contains a URL like "http://localhost:8080"
       const match = data.toString().match(/Serving.*at\s+(http:\/\/\S+)/)
       if (match && match[1]) {
