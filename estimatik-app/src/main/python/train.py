@@ -115,8 +115,7 @@ def train_model(data_path, model_path, layers, prediction_path):
         "last_epoch": len(history.history['loss'])
     }
 
-    with open(model_path, 'w') as f:
-        json.dump(result, f)
+    model.save(model_path, overwrite=True)
 
     return result
 

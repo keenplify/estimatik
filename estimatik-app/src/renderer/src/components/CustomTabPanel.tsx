@@ -1,24 +1,29 @@
-import { Box } from '@mui/material'
 import { usePhaseStore } from '@renderer/stores/phase'
+import { twMerge } from 'tailwind-merge'
 
 interface TabPanelProps {
   children?: React.ReactNode
+  className?: string
   index: number
 }
 
 export function CustomTabPanel(props: TabPanelProps) {
   const { phase } = usePhaseStore()
-  const { children, index, ...other } = props
+  const { children, index, className, ...other } = props
 
   return (
     <div
       role="tabpanel"
-      hidden={phase !== index}
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
+      className={twMerge(
+        'h-full grow flex flex-col',
+        phase !== index ? 'hidden' : 'flex',
+        className
+      )}
       {...other}
     >
-      {phase === index && <Box sx={{ p: 1 }}>{children}</Box>}
+      {phase === index && <div className="p-2 flex flex-col h-full grow">{children}</div>}
     </div>
   )
 }

@@ -11,15 +11,22 @@ import {
   TableRow
 } from '@mui/material'
 import _ from 'lodash'
+import colorInterpolate from 'color-interpolate'
+
+const positiveInterpolate = colorInterpolate(['#fcbe7b', '#fcea84', '#63be7b'])
+const negativeInterpolate = colorInterpolate(['#fcbe7b', '#f98d72', '#f8696b'])
+
+const interpolate = (n: number) => {
+  if (n >= 0) {
+    return positiveInterpolate(n)
+  } else {
+    return negativeInterpolate(Math.abs(n))
+  }
+}
 
 export default function CorrelationMatrix() {
-  const {
-    unlabeledTrainingData,
-    fields,
-    unlabeledFields,
-    highCorrelationFields,
-    setHighCorrelationFields
-  } = useDataStore()
+  const { unlabeledTrainingData, fields, unlabeledFields, setHighCorrelationFields } =
+    useDataStore()
 
   const matrix = useMemo(
     () => createCorrelationMatrix(unlabeledTrainingData),
@@ -62,7 +69,16 @@ export default function CorrelationMatrix() {
                   {unlabeledFields[i]}
                 </TableCell>
                 {unlabeledFields.map((field, j) => (
-                  <TableCell key={j}>{row[field] !== null && row[field].toFixed(2)}</TableCell>
+                  <TableCell
+                    key={j}
+                    style={{
+                      background: row[field] !== null ? interpolate(row[field]) : undefined
+                    }}
+                  >
+                    <div className="w-full text-center">
+                      {row[field] !== null && row[field].toFixed(2)}
+                    </div>
+                  </TableCell>
                 ))}
               </TableRow>
             ))}

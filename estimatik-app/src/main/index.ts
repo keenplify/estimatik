@@ -2,8 +2,12 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { callPythonAnalysis, callPythonTraining } from './utils/bridge'
+import { callPythonAnalysis, callPythonTraining, openNetron } from './utils/bridge'
 import { dialog } from 'electron'
+import { ChildProcess } from 'child_process'
+import terminate from 'terminate'
+
+export const netron: { process?: ChildProcess } = {}
 
 function createWindow(): void {
   // Create the browser window.
@@ -61,15 +65,23 @@ app.whenReady().then(() => {
     }
   })
 
-  ipcMain.on('training', async (event, data: Record<string, string>[], predictionData: Record<string, string>[], args) => {
-    try {
-      const result = await callPythonTraining(data, predictionData, args)
-      event.reply('training-reply', result)
-    } catch (error) {
-      console.error('Error in analysis:', error)
-      event.reply('training-error', error)
+  ipcMain.on(
+    'training',
+    async (
+      event,
+      data: Record<string, string>[],
+      predictionData: Record<string, string>[],
+      args
+    ) => {
+      try {
+        const result = await callPythonTraining(data, predictionData, args)
+        event.reply('training-reply', result)
+      } catch (error) {
+        console.error('Error in analysis:', error)
+        event.reply('training-error', error)
+      }
     }
-  })
+  )
 
   ipcMain.on('save-dialog', async (event, params) => {
     try {
@@ -79,6 +91,16 @@ app.whenReady().then(() => {
     } catch (error) {
       console.error('Error in analysis:', error)
       event.reply('save-dialog-error', error)
+    }
+  })
+
+  ipcMain.on('open-in-netron', async (event, path) => {
+    await openNetron(path, event)
+  })
+
+  ipcMain.on('shutdown-netron', async (event) => {
+    if (netron.process?.pid) {
+      terminate(netron.process.pid)
     }
   })
 

@@ -11,13 +11,21 @@ import { useDataStore } from '@renderer/stores/data'
 import { AnalysisResponse } from '@renderer/types'
 import { sendIpcMessage } from '@renderer/utils/promises'
 import { useQuery } from '@tanstack/react-query'
+import _ from 'lodash'
 import { useEffect } from 'react'
+import { twMerge } from 'tailwind-merge'
+import colorInterpolate from 'color-interpolate'
+
+const positiveInterpolate = colorInterpolate(['#63be7b', '#fcea84', '#fcbe7b'])
+
+function normalizeAIC(aic: number, minAIC: number, maxAIC: number) {
+  // Avoid division by zero if all AIC values are the same
+  return (aic - minAIC) / (maxAIC - minAIC)
+}
 
 export default function RegressionAnalysis() {
   const { highCorrelationFields, unlabeledFields, trainingData, setBestCandidateFields } =
     useDataStore()
-
-  console.log({ highCorrelationFields, unlabeledFields, trainingData, setBestCandidateFields })
 
   const { data, isLoading } = useQuery({
     queryKey: ['analysis', highCorrelationFields, unlabeledFields, trainingData],
@@ -26,12 +34,9 @@ export default function RegressionAnalysis() {
         highCorrelationFields.slice(0, index + 1)
       )
 
-      console.log({ transformedFields })
-
       const res: (AnalysisResponse & { fields: string[] })[] = []
 
       for (const fields of transformedFields) {
-        console.log({ fields })
         const data = trainingData.map((datum) => {
           const d: Record<string, string> = {
             [unlabeledFields[0]]: datum[unlabeledFields[0]]
@@ -43,8 +48,6 @@ export default function RegressionAnalysis() {
 
           return d
         })
-
-        console.log({ data })
 
         const analysis = await sendIpcMessage<AnalysisResponse>('analysis', data)
 
@@ -73,6 +76,9 @@ export default function RegressionAnalysis() {
     setBestCandidateFields(bestCandidate.fields)
   }, [bestCandidate])
 
+  const minAIC = Math.min(...(data?.map((d) => d.AIC) || []))
+  const maxAIC = Math.max(...(data?.map((d) => d.AIC) || []))
+
   return (
     <div className="flex flex-col gap-4">
       {isLoading ? (
@@ -89,16 +95,47 @@ export default function RegressionAnalysis() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data?.map((d, i) => (
-                <TableRow key={i}>
-                  <TableCell className="max-w-xs text-sm">
-                    {unlabeledFields[0]} + {d.fields.join(' + ')}
-                  </TableCell>
-                  <TableCell>{d.rSquared.toFixed(2)}</TableCell>
-                  <TableCell>{d.adjustedRsquared.toFixed(2)}</TableCell>
-                  <TableCell>{d.AIC.toFixed(2)}</TableCell>
-                </TableRow>
-              ))}
+              {data?.map((d, i) => {
+                const isBest = _.isEqual(d.fields, bestCandidate?.fields)
+
+                // Normalize the AIC value before passing it to the positiveInterpolate function
+                const normalizedAIC = normalizeAIC(d.AIC, minAIC, maxAIC)
+
+                return (
+                  <TableRow key={i}>
+                    <TableCell className={twMerge('max-w-xs text-sm')}>
+                      <span className={twMerge(isBest && 'font-bold')}>
+                        {unlabeledFields[0]} + {d.fields.join(' + ')}
+                      </span>
+                    </TableCell>
+                    <TableCell
+                      style={{
+                        background: positiveInterpolate(d.rSquared)
+                      }}
+                    >
+                      <span className={twMerge(isBest && 'font-bold')}>
+                        {d.rSquared.toFixed(2)}
+                      </span>
+                    </TableCell>
+                    <TableCell
+                      style={{
+                        background: positiveInterpolate(d.adjustedRsquared)
+                      }}
+                    >
+                      <span className={twMerge(isBest && 'font-bold')}>
+                        {d.adjustedRsquared.toFixed(2)}
+                      </span>
+                    </TableCell>
+                    <TableCell
+                      style={{
+                        background: positiveInterpolate(normalizedAIC)
+                      }}
+                    >
+                      <span className={twMerge(isBest && 'font-bold')}>{d.AIC.toFixed(2)}</span>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </TableContainer>
