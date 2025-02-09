@@ -32,10 +32,6 @@ export default function DataSummary() {
   const [activeStep] = useState(0)
   const [link, setLink] = useState<string>()
 
-  // const handleNext = () => {
-  //   setActiveStep((prevActiveStep) => prevActiveStep + 1)
-  // }
-
   useEffect(() => {
     if (!result) return
 
@@ -92,6 +88,7 @@ export default function DataSummary() {
 
   const averageMSE =
     ((result?.training.mse ?? 0) + (result?.testing.mse ?? 0) + (result?.validation.mse ?? 0)) / 3
+
   return (
     <div className="flex gap-2 h-full grow">
       <Box sx={{ width: 400 }}>
@@ -101,18 +98,6 @@ export default function DataSummary() {
               <StepLabel>{step.label}</StepLabel>
               <StepContent>
                 <Box sx={{ mb: 2 }}>
-                  {/* <Button
-                    variant="contained"
-                    onClick={handleNext}
-                    sx={{ mt: 1, mr: 1 }}
-                    disabled={steps.length - 1 == index && bestCandidateFields.length == 0}
-                  >
-                    {index === steps.length - 1 ? 'Finish' : 'Continue'}
-                  </Button>
-                  <Button disabled={index === 0} onClick={handleBack} sx={{ mt: 1, mr: 1 }}>
-                    Back
-                  </Button> */}
-
                   <Typography>You can also preview the model in netron</Typography>
 
                   {link ? (
@@ -158,6 +143,18 @@ export default function DataSummary() {
                 {
                   label: 'Predicted Data',
                   data: predictedData
+                },
+                {
+                  label: 'Data to be Predicted',
+                  data: predictedData.map((_, pIndex) => {
+                    const found = actualData[pIndex]
+                    if (found) {
+                      return null
+                    } else {
+                      return actualData[actualData.length - 1]
+                    }
+                  }),
+                  color: 'red'
                 }
               ]}
               height={400}
