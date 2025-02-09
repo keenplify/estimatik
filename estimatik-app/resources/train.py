@@ -7,9 +7,15 @@ from tensorflow.keras.layers import Dense, Input, BatchNormalization
 import numpy as np
 import json
 import os
+import io
 from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.optimizers import RMSprop
 import uuid
+import matplotlib
+import matplotlib.pyplot as plt
+import base64
+
+matplotlib.use('Agg')
 
 # Suppress TensorFlow warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logging (1: INFO, 2: WARNING, 3: ERROR)
@@ -24,6 +30,38 @@ def build_model(input_dim, layers):
     model.add(Dense(1, kernel_initializer="he_uniform"))
     model.compile(optimizer=RMSprop(learning_rate=0.001), loss='mean_absolute_percentage_error', metrics=['mae'])
     return model
+
+def compute_histogram(errors, bins=25):
+    hist, bin_edges = np.histogram(errors, bins=bins)
+    return {
+        "counts": hist.tolist(),
+        "bin_edges": bin_edges.tolist()
+    }
+
+def save_histogram_to_base64(train_errors, val_errors, test_errors, bins=25):
+    # Create an in-memory bytes buffer to save the image
+    buffer = io.BytesIO()
+
+    # Plot the histograms on the same figure
+    plt.figure()
+    plt.hist(train_errors, bins=bins, alpha=0.5, color='blue', label='Train Errors')
+    plt.hist(val_errors, bins=bins, alpha=0.5, color='green', label='Validation Errors')
+    plt.hist(test_errors, bins=bins, alpha=0.5, color='red', label='Test Errors')
+
+    plt.title('Error Histogram')
+    plt.xlabel('Error')
+    plt.ylabel('Frequency')
+    plt.legend(loc='upper right')
+    
+    # Save the figure to the buffer
+    plt.savefig(buffer, format='png')
+    plt.close()
+    
+    # Encode the buffer's contents (image) to Base64
+    buffer.seek(0)  # move cursor to the beginning
+    img_str = base64.b64encode(buffer.read()).decode('utf-8')
+    
+    return img_str
 
 def train_model(data_path, model_path, layers, prediction_path):
     df = pd.read_csv(data_path)
@@ -91,31 +129,48 @@ def train_model(data_path, model_path, layers, prediction_path):
 
     newpath = f"{uuid.uuid4()}.keras"
 
+    # Calculate the errors
+    train_errors = y_train - y_train_pred
+    val_errors = y_val - y_val_pred
+    test_errors = y_test - y_test_pred
+
+    # Save histogram images for errors
+    img_str = save_histogram_to_base64(train_errors, val_errors, test_errors)
+
+    # Compute histograms for errors
+    train_histogram = compute_histogram(train_errors)
+    val_histogram = compute_histogram(val_errors)
+    test_histogram = compute_histogram(test_errors)
+
     result = {
         "training": {
             "size": len(X_train),
             "mae": train_mae,
             "mse": train_mse,
-            "predictions": train_predictions
+            "predictions": train_predictions,
+            "histogram": train_histogram
         },
         "validation": {
             "size": len(X_val),
             "mae": val_mae,
             "mse": val_mse,
-            "predictions": val_predictions
+            "predictions": val_predictions,
+            "histogram": val_histogram
         },
         "testing": {
             "size": len(X_test),
             "mae": test_mae,
             "mse": test_mse,
-            "predictions": test_predictions
+            "predictions": test_predictions,
+            "histogram": test_histogram
         },
         "prediction": {
             "size": len(X_predict),
             "predictions": predict_predictions
         },
         "model_path": newpath,
-        "last_epoch": len(history.history['loss'])
+        "last_epoch": len(history.history['loss']),
+        "histogramImg": img_str,
     }
 
     model.save(newpath, overwrite=True)

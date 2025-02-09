@@ -92,7 +92,6 @@ export default function DataSummary() {
 
   const averageMSE =
     ((result?.training.mse ?? 0) + (result?.testing.mse ?? 0) + (result?.validation.mse ?? 0)) / 3
-
   return (
     <div className="flex gap-2 h-full grow">
       <Box sx={{ width: 400 }}>
@@ -164,6 +163,10 @@ export default function DataSummary() {
               height={400}
             />
           </div>
+          {result && (
+            <img src={`data:image/png;base64,${result.histogramImg}`} className="h-[400px]" />
+          )}
+
           <Box className="grid grid-cols-2 gap-4">
             <TableContainer className="h-max-content">
               <Table size="small">
