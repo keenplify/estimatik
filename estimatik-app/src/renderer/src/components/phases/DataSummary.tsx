@@ -218,22 +218,28 @@ export default function DataSummary() {
                 <TableBody>
                   <TableRow>
                     <TableCell>Training MAE</TableCell>
-                    <TableCell>{result?.training.mae}</TableCell>
+                    <TableCell>
+                      {result?.training.mae && Number(`${result?.training.mae}`).toFixed(2)}
+                    </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>Testing MAE</TableCell>
-                    <TableCell>{result?.testing.mae}</TableCell>
+                    <TableCell>
+                      {result?.testing.mae && Number(`${result?.testing.mae}`).toFixed(2)}
+                    </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>Validation MAE</TableCell>
-                    <TableCell>{result?.validation.mae}</TableCell>
+                    <TableCell>
+                      {result?.validation.mae && Number(`${result?.validation.mae}`).toFixed(2)}
+                    </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>
                       <b>Average MAE</b>
                     </TableCell>
                     <TableCell>
-                      <b>{averageMAE}</b>
+                      <b>{Number(`${averageMAE}`).toFixed(2)}</b>
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -252,22 +258,28 @@ export default function DataSummary() {
                 <TableBody>
                   <TableRow>
                     <TableCell>Training MSE</TableCell>
-                    <TableCell>{result?.training.mse}</TableCell>
+                    <TableCell>
+                      {result?.training.mse && Number(`${result?.training.mse}`).toFixed(2)}
+                    </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>Testing MSE</TableCell>
-                    <TableCell>{result?.testing.mse}</TableCell>
+                    <TableCell>
+                      {result?.testing.mse && Number(`${result?.testing.mse}`).toFixed(2)}
+                    </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>Validation MSE</TableCell>
-                    <TableCell>{result?.validation.mse}</TableCell>
+                    <TableCell>
+                      {result?.validation.mse && Number(`${result?.validation.mse}`).toFixed(2)}
+                    </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>
                       <b>Average MSE</b>
                     </TableCell>
                     <TableCell>
-                      <b>{averageMSE}</b>
+                      <b>{Number(`${averageMSE}`).toFixed(2)}</b>
                     </TableCell>
                   </TableRow>
                 </TableBody>
