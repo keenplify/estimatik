@@ -63,7 +63,7 @@ def save_histogram_to_base64(train_errors, val_errors, test_errors, bins=25):
     
     return img_str
 
-def train_model(data_path, model_path, layers, prediction_path):
+def train_model(data_path, layers, prediction_path):
     df = pd.read_csv(data_path)
     df_predict = pd.read_csv(prediction_path)
 
@@ -180,12 +180,11 @@ def train_model(data_path, model_path, layers, prediction_path):
 def main():
     parser = argparse.ArgumentParser(description='Train a model with the provided CSV data.')
     parser.add_argument('-file', type=str, required=True, help='Path to the CSV file')
-    parser.add_argument('-path', type=str, required=True, help='Path to save the trained model')
     parser.add_argument('-layers', type=int, required=True, help='Number of layers in the model')
     parser.add_argument('-predictionfile', type=str, required=True, help='Path to the CSV file for prediction')
     args = parser.parse_args()
 
-    result = train_model(args.file, args.path, args.layers, args.predictionfile)
+    result = train_model(args.file, args.layers, args.predictionfile)
     print(json.dumps(result))
 
 if __name__ == "__main__":
