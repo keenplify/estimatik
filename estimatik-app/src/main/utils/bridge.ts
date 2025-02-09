@@ -1,10 +1,11 @@
-import { app } from 'electron'
 import { writeFile, unlink } from 'fs'
 import { join } from 'path'
 import { exec } from 'child_process'
 import { v4 as uuidv4 } from 'uuid'
 import Papa from 'papaparse'
 import { netron } from '..'
+import { isProd, isWindows } from './env'
+import { sync } from 'mkdirp'
 
 /**
  * Executes a Python script with the provided CSV data and additional arguments.
@@ -20,15 +21,17 @@ function executePythonScript(
   scriptName: string,
   args?: Record<string, any>
 ): Promise<string> {
+  const python = import.meta.env.VITE_WSL_PYTHON_PATH || 'python'
+
   return new Promise((resolve, reject) => {
     // Convert data to CSV
     const csv = Papa.unparse(data)
 
     // Create a temporary folder path
-    const tempFolderPath = app.getPath('temp')
+    sync('temp')
 
     // Create a temporary file path with a UUID
-    const tempFilePath = join(tempFolderPath, `${uuidv4()}.csv`)
+    const tempFilePath = `temp/${uuidv4()}.csv`
 
     // Write the CSV data to the temporary file
     writeFile(tempFilePath, csv, (err) => {
@@ -36,12 +39,18 @@ function executePythonScript(
         return reject(err)
       }
 
-      let command = `python3 "${join(app.getAppPath(), 'src', 'main', 'python', scriptName)}" -file "${tempFilePath}"`
+      let command: string
+
+      if (isWindows && isProd) {
+        command = `${python} "resources/app.asar.unpacked/resources/${scriptName}" -file "${tempFilePath}"`
+      } else {
+        command = `${python} "${join('resources', scriptName)}" -file "${tempFilePath}"`
+      }
 
       if (predictionData) {
         // Convert prediction data to CSV
         const predictionCsv = Papa.unparse(predictionData)
-        const tempPredictionFilePath = join(tempFolderPath, `${uuidv4()}.csv`)
+        const tempPredictionFilePath = `temp/${uuidv4()}.csv`
 
         // Write the prediction CSV data to the temporary file
         writeFile(tempPredictionFilePath, predictionCsv, (err) => {
@@ -58,7 +67,7 @@ function executePythonScript(
           }
 
           // Call the Python script
-          exec(command, (error, stdout, stderr) => {
+          exec(isProd && isWindows ? `wsl ${command}` : command, (error, stdout, stderr) => {
             if (error) {
               console.error('Error executing Python script:', error)
             }
@@ -67,18 +76,20 @@ function executePythonScript(
               console.error('Python script stderr:', stderr)
             }
 
-            // Delete the temporary files
-            unlink(tempFilePath, (unlinkErr) => {
-              if (unlinkErr) {
-                console.error('Failed to delete temporary file:', unlinkErr)
-              }
-            })
+            setTimeout(() => {
+              // Delete the temporary files
+              unlink(tempFilePath, (unlinkErr) => {
+                if (unlinkErr) {
+                  console.error('Failed to delete temporary file:', unlinkErr)
+                }
+              })
 
-            unlink(tempPredictionFilePath, (unlinkErr) => {
-              if (unlinkErr) {
-                console.error('Failed to delete temporary prediction file:', unlinkErr)
-              }
-            })
+              unlink(tempPredictionFilePath, (unlinkErr) => {
+                if (unlinkErr) {
+                  console.error('Failed to delete temporary prediction file:', unlinkErr)
+                }
+              })
+            }, 5000)
 
             resolve(stdout)
           })
@@ -91,7 +102,7 @@ function executePythonScript(
         }
 
         // Call the Python script
-        exec(command, (error, stdout, stderr) => {
+        exec(isProd && isWindows ? `wsl ${command}` : command, (error, stdout, stderr) => {
           if (error) {
             console.error('Error executing Python script:', error)
             return reject(error)
@@ -169,6 +180,7 @@ export function openNetron(path: string, event: Electron.IpcMainEvent) {
 
     // You can also listen to stderr if you want to log errors
     netron.process.stderr?.on('data', (data) => {
+      event.reply('netron-err', data)
       console.error(data.toString())
     })
   })

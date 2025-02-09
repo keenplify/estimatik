@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import DataTraining from './components/phases/DataTraining'
 import { useDataStore } from './stores/data'
 import DataSummary from './components/phases/DataSummary'
+import { useEffect } from 'react'
 
 const theme = createTheme({})
 
@@ -23,6 +24,18 @@ function App(): JSX.Element {
     setPhase(newValue)
   }
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key == 'F12') {
+        window.electron.ipcRenderer.send('devtools')
+      }
+    }
+
+    document.addEventListener('keydown', handler, true)
+
+    return () => document.removeEventListener('keydown', handler)
+  })
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
@@ -35,7 +48,10 @@ function App(): JSX.Element {
               <Tab label="Data Preview" disabled={!isSetup} />
               <Tab label="Data Treatment" disabled={!isSetup} />
               <Tab label="Data Training" disabled={!isSetup || bestCandidateFields.length == 0} />
-              <Tab label="Data Summary" disabled={!isSetup || bestCandidateFields.length == 0 || !result} />
+              <Tab
+                label="Data Summary"
+                disabled={!isSetup || bestCandidateFields.length == 0 || !result}
+              />
             </Tabs>
           </Box>
           <CustomTabPanel index={0}>

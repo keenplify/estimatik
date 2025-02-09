@@ -4,6 +4,7 @@ import { createNumberArray } from '../utils/array'
 import {
   Box,
   Button,
+  Link,
   Step,
   StepContent,
   StepLabel,
@@ -22,33 +23,32 @@ import { twMerge } from 'tailwind-merge'
 const steps: { label: string; description?: string }[] = [
   {
     label: 'Predictions'
-  },
-  {
-    label: 'Model Viewer'
   }
 ]
 
 export default function DataSummary() {
   const { trainingData, bestCandidateFields, unlabeledFields, fields, result, fullData } =
     useDataStore()
-  const [activeStep, setActiveStep] = useState(0)
+  const [activeStep] = useState(0)
   const [link, setLink] = useState<string>()
 
-  const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1)
-  }
-
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1)
-  }
+  // const handleNext = () => {
+  //   setActiveStep((prevActiveStep) => prevActiveStep + 1)
+  // }
 
   useEffect(() => {
     if (!result) return
+
+    console.log({ result })
 
     window.electron.ipcRenderer.send('open-in-netron', result.model_path)
 
     window.electron.ipcRenderer.once('netron-link', (_, link) => {
       setLink(link)
+    })
+
+    window.electron.ipcRenderer.once('netron-error', (_, error) => {
+      console.error(error)
     })
 
     return () => {
@@ -97,21 +97,12 @@ export default function DataSummary() {
     <div className="flex gap-2 h-full grow">
       <Box sx={{ width: 400 }}>
         <Stepper activeStep={activeStep} orientation="vertical">
-          {steps.map((step, index) => (
+          {steps.map((step) => (
             <Step key={step.label}>
-              <StepLabel
-                optional={
-                  index === steps.length - 1 ? (
-                    <Typography variant="caption">Last step</Typography>
-                  ) : null
-                }
-              >
-                {step.label}
-              </StepLabel>
+              <StepLabel>{step.label}</StepLabel>
               <StepContent>
-                <Typography>{step.description}</Typography>
                 <Box sx={{ mb: 2 }}>
-                  <Button
+                  {/* <Button
                     variant="contained"
                     onClick={handleNext}
                     sx={{ mt: 1, mr: 1 }}
@@ -121,7 +112,27 @@ export default function DataSummary() {
                   </Button>
                   <Button disabled={index === 0} onClick={handleBack} sx={{ mt: 1, mr: 1 }}>
                     Back
-                  </Button>
+                  </Button> */}
+
+                  <Typography>You can also preview the model in netron</Typography>
+
+                  {link ? (
+                    <Link href={link} target="_blank" rel="noreferrer" sx={{ mt: 1, mr: 1 }}>
+                      Open Netron
+                    </Link>
+                  ) : (
+                    result && (
+                      <Button
+                        variant="contained"
+                        sx={{ mt: 1, mr: 1 }}
+                        onClick={() => {
+                          window.electron.ipcRenderer.send('open-in-netron', result.model_path)
+                        }}
+                      >
+                        Open Netron
+                      </Button>
+                    )
+                  )}
                 </Box>
               </StepContent>
             </Step>

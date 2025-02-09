@@ -10,7 +10,7 @@ import { usePhaseStore } from '@renderer/stores/phase'
 export default function DataTraining() {
   const { predictionData, trainingData, bestCandidateFields, fields, setResult } = useDataStore()
   const { phase, setPhase } = usePhaseStore()
-  const [path, setPath] = useState<string>('')
+  const [path, setPath] = useState<string>('DUMMYDATA')
   const [layers, setLayers] = useState<number>(5)
 
   const dataMapper = (d: Record<string, string>) => {
@@ -57,7 +57,7 @@ export default function DataTraining() {
 
   return (
     <div className="flex flex-col gap-4 max-w-[512px]">
-      <div className="flex gap-2">
+      <div className="hidden gap-2">
         <TextField
           onChange={(e) => setPath(e.target.value)}
           value={path}

@@ -9,6 +9,7 @@ import json
 import os
 from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.optimizers import RMSprop
+import uuid
 
 # Suppress TensorFlow warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logging (1: INFO, 2: WARNING, 3: ERROR)
@@ -88,6 +89,8 @@ def train_model(data_path, model_path, layers, prediction_path):
     test_mae = mean_absolute_error(y_test, y_test_pred)
     test_mse = mean_squared_error(y_test, y_test_pred)
 
+    newpath = f"{uuid.uuid4()}.keras"
+
     result = {
         "training": {
             "size": len(X_train),
@@ -111,11 +114,11 @@ def train_model(data_path, model_path, layers, prediction_path):
             "size": len(X_predict),
             "predictions": predict_predictions
         },
-        "model_path": model_path,
+        "model_path": newpath,
         "last_epoch": len(history.history['loss'])
     }
 
-    model.save(model_path, overwrite=True)
+    model.save(newpath, overwrite=True)
 
     return result
 

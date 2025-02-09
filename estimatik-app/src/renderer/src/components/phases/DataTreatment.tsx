@@ -1,13 +1,4 @@
-import {
-  Box,
-  Button,
-  Paper,
-  Step,
-  StepContent,
-  StepLabel,
-  Stepper,
-  Typography
-} from '@mui/material'
+import { Box, Button, Step, StepContent, StepLabel, Stepper, Typography } from '@mui/material'
 import { useState } from 'react'
 import CorrelationMatrix from '../treatments/CorrelationMatrix'
 import RegressionAnalysis from '../treatments/RegressionAnalysis'

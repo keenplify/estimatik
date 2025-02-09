@@ -14,6 +14,15 @@ An Electron application with React and TypeScript
 $ npm install
 ```
 
+Install the following
+https://github.com/lutzroeder/netron?tab=readme-ov-file
+
+On WSL:
+anaconda
+tensorflow
+scikit-learn
+pandas
+
 ### Development
 
 ```bash

@@ -9,9 +9,11 @@ import terminate from 'terminate'
 
 export const netron: { process?: ChildProcess } = {}
 
+let mainWindow: BrowserWindow
+
 function createWindow(): void {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -83,6 +85,10 @@ app.whenReady().then(() => {
     }
   )
 
+  ipcMain.on('devtools', () => {
+    mainWindow.webContents.openDevTools()
+  })
+
   ipcMain.on('save-dialog', async (event, params) => {
     try {
       const data = await dialog.showSaveDialog(params)
@@ -98,7 +104,7 @@ app.whenReady().then(() => {
     await openNetron(path, event)
   })
 
-  ipcMain.on('shutdown-netron', async (event) => {
+  ipcMain.on('shutdown-netron', async () => {
     if (netron.process?.pid) {
       terminate(netron.process.pid)
     }
