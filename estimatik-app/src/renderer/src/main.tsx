@@ -1,3 +1,5 @@
+import 'hazardous'
+
 import './assets/main.css'
 
 import React from 'react'

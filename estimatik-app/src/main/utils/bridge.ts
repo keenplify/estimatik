@@ -6,6 +6,7 @@ import Papa from 'papaparse'
 import { netron } from '..'
 import { isProd, isWindows } from './env'
 import { sync } from 'mkdirp'
+import { app } from 'electron'
 
 /**
  * Executes a Python script with the provided CSV data and additional arguments.
@@ -41,11 +42,7 @@ function executePythonScript(
 
       let command: string
 
-      if (isWindows && isProd) {
-        command = `${python} "resources/app.asar.unpacked/resources/${scriptName}" -file "${tempFilePath}"`
-      } else {
-        command = `${python} "${join('resources', scriptName)}" -file "${tempFilePath}"`
-      }
+      command = `${python} "${join(app.getAppPath(), 'resources', scriptName).replace(/\\/g, '/')}" -file "${tempFilePath}"`
 
       if (predictionData) {
         // Convert prediction data to CSV
@@ -67,32 +64,35 @@ function executePythonScript(
           }
 
           // Call the Python script
-          exec(isProd && isWindows ? `wsl ${command}` : command, (error, stdout, stderr) => {
-            if (error) {
-              console.error('Error executing Python script:', error)
+          exec(
+            isProd && isWindows ? `wsl ${command.replace('C:/', '/mnt/c/')}` : command,
+            (error, stdout, stderr) => {
+              if (error) {
+                console.error('Error executing Python script:', error)
+              }
+
+              if (stderr) {
+                console.error('Python script stderr:', stderr)
+              }
+
+              setTimeout(() => {
+                // Delete the temporary files
+                unlink(tempFilePath, (unlinkErr) => {
+                  if (unlinkErr) {
+                    console.error('Failed to delete temporary file:', unlinkErr)
+                  }
+                })
+
+                unlink(tempPredictionFilePath, (unlinkErr) => {
+                  if (unlinkErr) {
+                    console.error('Failed to delete temporary prediction file:', unlinkErr)
+                  }
+                })
+              }, 5000)
+
+              resolve(stdout)
             }
-
-            if (stderr) {
-              console.error('Python script stderr:', stderr)
-            }
-
-            setTimeout(() => {
-              // Delete the temporary files
-              unlink(tempFilePath, (unlinkErr) => {
-                if (unlinkErr) {
-                  console.error('Failed to delete temporary file:', unlinkErr)
-                }
-              })
-
-              unlink(tempPredictionFilePath, (unlinkErr) => {
-                if (unlinkErr) {
-                  console.error('Failed to delete temporary prediction file:', unlinkErr)
-                }
-              })
-            }, 5000)
-
-            resolve(stdout)
-          })
+          )
         })
       } else {
         if (args) {
@@ -102,25 +102,28 @@ function executePythonScript(
         }
 
         // Call the Python script
-        exec(isProd && isWindows ? `wsl ${command}` : command, (error, stdout, stderr) => {
-          if (error) {
-            console.error('Error executing Python script:', error)
-            return reject(error)
-          }
-
-          if (stderr) {
-            console.error('Python script stderr:', stderr)
-          }
-
-          // Delete the temporary file
-          unlink(tempFilePath, (unlinkErr) => {
-            if (unlinkErr) {
-              console.error('Failed to delete temporary file:', unlinkErr)
+        exec(
+          isProd && isWindows ? `wsl ${command.replace('C:/', '/mnt/c/')}` : command,
+          (error, stdout, stderr) => {
+            if (error) {
+              console.error('Error executing Python script:', error)
+              return reject(error)
             }
-          })
 
-          resolve(stdout)
-        })
+            if (stderr) {
+              console.error('Python script stderr:', stderr)
+            }
+
+            // Delete the temporary file
+            unlink(tempFilePath, (unlinkErr) => {
+              if (unlinkErr) {
+                console.error('Failed to delete temporary file:', unlinkErr)
+              }
+            })
+
+            resolve(stdout)
+          }
+        )
       }
     })
   })
